@@ -3341,6 +3341,10 @@ int main(int argc, char *argv[])
     maxTime = 0.0;		// set to value that can never be underset
 	rcs_print("****************Start the task while cycle**************\n");
     while (!done) {
+
+
+		fputs("!!!!!!!!!!1beginning of the while!!!!!!!!!!!!!!1", stdout);
+		fflush(stdout);
 		rcs_print("**************Checking the hal layer pin:check_ini_hal_items()***************\n");
         check_ini_hal_items();
 	// read command
@@ -3368,7 +3372,7 @@ int main(int argc, char *argv[])
 	// synchronize subordinate states
 	rcs_print("**********Juding the estop:emcStatus->io.aux.estop**********\n");
 	if (emcStatus->io.aux.estop) {
-		rcs_print("!!!!!!!!!!!ESTOP:!!!!!!!!!!!!1£º£¡\n");
+		rcs_print("!!!!!!!!!!!ESTOP:!!!!!!!!!!!!\n");
 	    if (emcStatus->motion.traj.enabled) {
 		emcTrajDisable();
 		emcTaskAbort();

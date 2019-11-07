@@ -86,7 +86,7 @@ include an option for suppressing superfluous commands.
 #include "interp_internal.hh"	// interpreter private definitions
 #include "interp_queue.hh"
 #include "rs274ngc_interp.hh"
-#include "rcs_print.hh"
+//#include "rcs_print.hh"
 #include "units.h"
 
 extern char * _rs274ngc_errors[];
@@ -261,7 +261,9 @@ This executes a previously parsed block.
 
 int Interp::_execute(const char *command)
 {
-	rcs_print("***************Excuting the command:_execute(const char *command)***************");
+	fputs("***************Excuting the command:_execute(const char *command)***************", stdout);
+	fflush(stdout);
+  printf("***************Excuting the command:_execute(const char *command)***************");
   int status;
   int n;
   int MDImode = 0;
@@ -1463,7 +1465,9 @@ zero, this parses the line into the _setup.block1.
 
 int Interp::_read(const char *command)  //!< may be NULL or a string to read
 {
-	rcs_print("***************starting read the NGC code!:_read(const char *command)*****************");
+	fputs("***************starting read the NGC code!:_read(const char *command)*****************", stdout);
+	fflush(stdout);
+	//printf("***************starting read the NGC code!:_read(const char *command)*****************");
   static char name[] = "Interp::read";
   int read_status;
 
