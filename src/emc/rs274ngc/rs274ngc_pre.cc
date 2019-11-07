@@ -263,7 +263,7 @@ int Interp::_execute(const char *command)
 {
 	fputs("***************Excuting the command:_execute(const char *command)***************", stdout);
 	fflush(stdout);
-  printf("***************Excuting the command:_execute(const char *command)***************");
+  //printf("***************Excuting the command:_execute(const char *command)***************");
   int status;
   int n;
   int MDImode = 0;
