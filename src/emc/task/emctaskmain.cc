@@ -3343,7 +3343,7 @@ int main(int argc, char *argv[])
     while (!done) {
 
 
-		fputs("!!!!!!!!!!1beginning of the while!!!!!!!!!!!!!!1", stdout);
+		fputs("!!!!!!!!!!1beginning of the while!!!!!!!!!!!!!!1\n", stdout);
 		fflush(stdout);
 		rcs_print("**************Checking the hal layer pin:check_ini_hal_items()***************\n");
         check_ini_hal_items();

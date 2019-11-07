@@ -261,7 +261,7 @@ This executes a previously parsed block.
 
 int Interp::_execute(const char *command)
 {
-	fputs("***************Excuting the command:_execute(const char *command)***************", stdout);
+	fputs("***************Excuting the command:_execute(const char *command)***************\n", stdout);
 	fflush(stdout);
   //printf("***************Excuting the command:_execute(const char *command)***************");
   int status;
@@ -1465,9 +1465,9 @@ zero, this parses the line into the _setup.block1.
 
 int Interp::_read(const char *command)  //!< may be NULL or a string to read
 {
-	fputs("***************starting read the NGC code!:_read(const char *command)*****************", stdout);
+	fputs("***************starting read the NGC code!:_read(const char *command)*****************\n", stdout);
 	fflush(stdout);
-	//printf("***************starting read the NGC code!:_read(const char *command)*****************");
+	//printf("***************starting read the NGC code!:_read(const char *command)*****************\n");
   static char name[] = "Interp::read";
   int read_status;
 
