@@ -3335,7 +3335,7 @@ int main(int argc, char *argv[])
     }
 	
     startTime = etime();	// set start time before entering loop;
-	rcs_print("**********Startting time��%f **********\n",startTime);
+	rcs_print("**********Startting time%f **********\n",startTime);
     // it will be set at end of loop from now on
     minTime = DBL_MAX;		// set to value that can never be exceeded
     maxTime = 0.0;		// set to value that can never be underset
