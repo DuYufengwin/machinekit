@@ -52,6 +52,12 @@ static emcmot_struct_t *emcmotStruct = 0;
    from named ini file */
 int usrmotIniLoad(const char *filename)
 {
+	FILE *writeMsg = fopen("printMsg.txt", "a+");
+	char msg[128];
+	sprintf(msg, "the ini file is : %s \n", filename);
+	fputs(msg, writeMsg);
+	fflush(writeMsg);
+	fclose(writeMsg);
     IniFile inifile(IniFile::ERR_CONVERSION);   // Enable exception.
     
     /* open it */
@@ -77,6 +83,10 @@ int usrmotIniLoad(const char *filename)
 /* writes command from c */
 int usrmotWriteEmcmotCommand(emcmot_command_t * c)
 {
+	FILE *writeMsg = fopen("printMsg.txt", "a+");
+	fputs("enter the usrmotWriteEmcmotCommand(emcmot_command_t * c)\n", writeMsg);
+	fflush(writeMsg);
+	fclose(writeMsg);
     emcmot_status_t s;
     static int commandNum = 0;
     static unsigned char headCount = 0;
