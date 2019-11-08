@@ -3335,7 +3335,7 @@ int main(int argc, char *argv[])
     }
 	
     startTime = etime();	// set start time before entering loop;
-	rcs_print("**********Startting time£º%f **********\n",startTime);
+	rcs_print("**********Startting timeï¿½ï¿½%f **********\n",startTime);
     // it will be set at end of loop from now on
     minTime = DBL_MAX;		// set to value that can never be exceeded
     maxTime = 0.0;		// set to value that can never be underset
@@ -3521,7 +3521,7 @@ int main(int argc, char *argv[])
 	// since emcStatus was passed to the WM init functions, it
 	// will be updated in the _update() functions above. There's
 	// no need to call the individual functions on all WM items.
-	rcs_print("**********Write the emcStatus :emcStatusBuffer->write(emcStatus);************");
+	rcs_print("**********Write the emcStatus :emcStatusBuffer->write(emcStatus);************\n");
 	emcStatusBuffer->write(emcStatus);
 
 	// wait on timer cycle, if specified, or calculate actual
@@ -3544,7 +3544,7 @@ int main(int argc, char *argv[])
 	    timer->wait();
 	}
     }
-	rcs_print("********end of while cycle*********");
+	rcs_print("********end of while cycle*********\n");
     // end of while (! done)
 
     // clean up everything
