@@ -57,16 +57,23 @@ int Interp::inverse_time_rate_arc(double x1,     //!< x coord of start point of 
                                  block_pointer block,   //!< pointer to a block of RS274 instructions
                                  setup_pointer settings)        //!< pointer to machine settings             
 {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("Enter the inverse_time_rate_arc()...\n", writeMsg);
+	fflush(writeMsg);
   double length;
   double rate;
 
   if (settings->feed_mode != INVERSE_TIME) return -1;
-
   length = find_arc_length(x1, y1, z1, cx, cy, turn, x2, y2, z2);
+  sprintf(msgBuf, "The length of the arc is :%lf \n", length);
+  fputs(msgBuf, writeMsg);
   rate = MAX(0.1, (length * block->f_number));
   enqueue_SET_FEED_RATE(rate);
   settings->feed_rate = rate;
-
+  sprintf(msgBuf, "The feed_rate is :%lf \n", settings->feed_rate);
+  fputs(msgBuf, writeMsg);
+  fclose(writeMsg);
   return INTERP_OK;
 }
 

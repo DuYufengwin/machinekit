@@ -61,6 +61,10 @@ int Interp::comp_get_current(setup_pointer settings, double *x, double *y, doubl
 }
 
 int Interp::comp_set_current(setup_pointer settings, double x, double y, double z) {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("*********Enter the comp_set_current()********\n", writeMsg);
+	fflush(writeMsg);
     switch(settings->plane) {
     case CANON_PLANE_XY:
         settings->current_x = x;
@@ -75,6 +79,10 @@ int Interp::comp_set_current(setup_pointer settings, double x, double y, double 
     default:
         ERS("BUG: Invalid plane in comp_set_current");
     }
+	sprintf(msgBuf, "CANON_PLANE: %d, current coordinates:(%lf, %lf, %lf) \n" ,
+		settings->plane, settings->current_x, settings->current_y, settings->current_z);
+	fputs(msgBuf, writeMsg);
+	fclose(writeMsg);
     return INTERP_OK;
 }
 
@@ -97,6 +105,10 @@ int Interp::comp_get_programmed(setup_pointer settings, double *x, double *y, do
 }
 
 int Interp::comp_set_programmed(setup_pointer settings, double x, double y, double z) {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("*********Enter the comp_set_programmed()********\n", writeMsg);
+	fflush(writeMsg);
     switch(settings->plane) {
     case CANON_PLANE_XY:
         settings->program_x = x;
@@ -111,6 +123,10 @@ int Interp::comp_set_programmed(setup_pointer settings, double x, double y, doub
     default:
         ERS("BUG: Invalid plane in comp_set_programmed");
     }
+	sprintf(msgBuf, "program coordinates:(%lf, %lf, %lf) \n",
+		settings->program_x, settings->program_y, settings->program_z);
+	fputs(msgBuf, writeMsg);
+	fclose(writeMsg);
     return INTERP_OK;
 }
 
@@ -349,6 +365,13 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
                        block_pointer block,     //!< pointer to a block of RS274 instructions
                        setup_pointer settings)  //!< pointer to machine settings             
 {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("**********8Enter the convert_arc()***********\n", writeMsg);
+	fflush(writeMsg);
+	sprintf(msgBuf, "lineNum: %d  motion type: %d \n", line(),move);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
   int status;
   int first;                    /* flag set true if this is first move after comp true */
   int ijk_flag;                 /* flag set true if any of i,j,k present in NC code  */
@@ -363,6 +386,9 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
   CHKS((settings->arc_not_allowed), (_("The move just after exiting cutter compensation mode must be straight, not an arc")));
 
   ijk_flag = block->i_flag || block->j_flag || block->k_flag;
+  sprintf(msgBuf, "ijk_flag: %d \n", ijk_flag);
+  fputs(msgBuf, writeMsg);
+  fflush(writeMsg);
   first = settings->cutter_comp_firstmove;
 
   CHKS((settings->plane == CANON_PLANE_UV
@@ -453,18 +479,29 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
   CHP(find_ends(block, settings, &end_x, &end_y, &end_z,
                 &AA_end, &BB_end, &CC_end, 
                 &u_end, &v_end, &w_end));
-
+  fputs("The results of the fun find_ends: \n", writeMsg);
+  fflush(writeMsg);
+  sprintf(msgBuf, "end_x: %lf , end_y: %lf ,end_z: %lf ,AA_end: %lf ,BB_end: %lf ,CC_end: %lf ,u_end: %lf ,v_end: %lf ,w_end: %lf \n", 
+	  end_x, end_y, end_z, AA_end,BB_end, CC_end,u_end, v_end, w_end);
+  fputs(msgBuf, writeMsg);
+  fflush(writeMsg);
   settings->motion_mode = move;
 
   // Should be done with changes to settings here, so we can pack the state
   // Create a state tag and dump it to canon
   StateTag tag;
+  fputs("Starting to update the StateTag \n", writeMsg);
+  fflush(writeMsg);
   write_state_tag(block, settings, tag);
   update_tag(tag);
+  
 
   if (settings->plane == CANON_PLANE_XY) {
+	  fputs("CANON_PLANE_XY \n", writeMsg);
     if ((!settings->cutter_comp_side) ||
         (settings->cutter_comp_radius == 0.0)) {
+		fputs("We have no cutting compensation so we enter the convert_arc2() \n", writeMsg);
+
       status =
         convert_arc2(move, block, settings,
                      &(settings->current_x), &(settings->current_y),
@@ -474,12 +511,14 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
                      block->i_number, block->j_number);
       CHP(status);
     } else if (first) {
+		fputs("This is the first try to run arcFeed so we enter the convert_comp1() \n", writeMsg);
       status = convert_arc_comp1(move, block, settings, end_x, end_y, end_z,
                                  block->i_number, block->j_number,
                                  AA_end, BB_end, CC_end,
                                  u_end, v_end, w_end);
       CHP(status);
     } else {
+		fputs("This is not the first arcFeed so we enter the convert_comp2() \n", writeMsg);
       status = convert_arc_comp2(move, block, settings, end_x, end_y, end_z,
                                  block->i_number, block->j_number,
                                  AA_end, BB_end, CC_end,
@@ -487,8 +526,10 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
       CHP(status);
     }
   } else if (settings->plane == CANON_PLANE_XZ) {
+	  fputs("CANON_PLANE_XZ \n", writeMsg);
     if ((!settings->cutter_comp_side) ||
         (settings->cutter_comp_radius == 0.0)) {
+		fputs("We have no cutting compensation so we enter the convert_arc2() \n", writeMsg);
       status =
         convert_arc2(move, block, settings,
                      &(settings->current_z), &(settings->current_x),
@@ -498,12 +539,14 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
                      block->k_number, block->i_number);
       CHP(status);
     } else if (first) {
+		fputs("This is the first try to run arcFeed so we enter the convert_comp1() \n", writeMsg);
       status = convert_arc_comp1(move, block, settings, end_z, end_x, end_y,
                                  block->k_number, block->i_number,
                                  AA_end, BB_end, CC_end,
                                  u_end, v_end, w_end);
       CHP(status);
     } else {
+		fputs("This is not the first arcFeed so we enter the convert_comp2() \n", writeMsg);
       status = convert_arc_comp2(move, block, settings, end_z, end_x, end_y,
                                  block->k_number, block->i_number,
                                  AA_end, BB_end, CC_end,
@@ -512,6 +555,7 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
       CHP(status);
     }
   } else if (settings->plane == CANON_PLANE_YZ) {
+	  fputs("CANON_PLANE_YZ \n", writeMsg);
     status =
       convert_arc2(move, block, settings,
                    &(settings->current_y), &(settings->current_z),
@@ -522,6 +566,9 @@ int Interp::convert_arc(int move,        //!< either G_2 (cw arc) or G_3 (ccw ar
     CHP(status);
   } else
     ERS(NCE_BUG_PLANE_NOT_XY_YZ_OR_XZ);
+  fputs("the end of the convert_arc", writeMsg);
+  fflush(writeMsg);
+  fclose(writeMsg);
   return INTERP_OK;
 }
 
@@ -560,6 +607,10 @@ int Interp::convert_arc2(int move,       //!< either G_2 (cw arc) or G_3 (ccw ar
                         double offset1, //!< center, either abs or offset from current
                         double offset2)
 {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("********Enter the convert_arc2()*******\n", writeMsg);
+	fflush(writeMsg);
   double center1;
   double center2;
   int turn;                     /* number of full or partial turns CCW in arc */
@@ -571,17 +622,27 @@ int Interp::convert_arc2(int move,       //!< either G_2 (cw arc) or G_3 (ccw ar
 
   // Radius tolerance allows a bit of leeway on the minimum radius for a radius defined arc.
   double radius_tolerance = (settings->length_units == CANON_UNITS_INCHES) ?
-    RADIUS_TOLERANCE_INCH : RADIUS_TOLERANCE_MM;
-
+	  RADIUS_TOLERANCE_INCH : RADIUS_TOLERANCE_MM;
+  sprintf(msgBuf, "the radius_tolerance: %lf \n", radius_tolerance);
+  fputs(msgBuf, writeMsg);
+  fflush(writeMsg);
   if (block->r_flag) {
+	  fputs("Enter the arc_data_r to find the center and the num of turnnings \n", writeMsg);
       CHP(arc_data_r(move, plane, *current1, *current2, end1, end2,
                      block->r_number, block->p_flag? round_to_int(block->p_number) : 1,
                      &center1, &center2, &turn, radius_tolerance));
+	  sprintf(msgBuf, "center1: %lf,center2: %lf,turn: %d \n", center1, center2, turn);
+	  fputs(msgBuf, writeMsg);
+	  fflush(writeMsg);
   } else {
+	  fputs("Enter the arc_data_ijk to find the center and the num of turnnings \n", writeMsg);
       CHP(arc_data_ijk(move, plane, *current1, *current2, end1, end2,
                        (settings->ijk_distance_mode == MODE_ABSOLUTE),
                        offset1, offset2, block->p_flag? round_to_int(block->p_number) : 1,
                        &center1, &center2, &turn, radius_tolerance, spiral_abs_tolerance, SPIRAL_RELATIVE_TOLERANCE));
+	  sprintf(msgBuf, "center1: %lf,center2: %lf,turn: %d \n", center1, center2, turn);
+	  fputs(msgBuf, writeMsg);
+	  fflush(writeMsg);
   }
   inverse_time_rate_arc(*current1, *current2, *current3, center1, center2,
                         turn, end1, end2, end3, block, settings);
@@ -597,7 +658,8 @@ int Interp::convert_arc2(int move,       //!< either G_2 (cw arc) or G_3 (ccw ar
   settings->u_current = u;
   settings->v_current = v;
   settings->w_current = w;
-  
+  fputs("Exit from the function convert_arc2", writeMsg);
+  fclose(writeMsg);
   return INTERP_OK;
 }
 
@@ -640,6 +702,10 @@ int Interp::convert_arc_comp1(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
                               double CC_end,     //!< c-value at end of arc
                               double u_end, double v_end, double w_end) //!< uvw at end of arc
 {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("*********Enter the convert_arc_comp1()********\n", writeMsg);
+	fflush(writeMsg);
     double center_x, center_y;
     double gamma;                 /* direction of perpendicular to arc at end */
     int side;                     /* offset side - right or left              */
@@ -650,27 +716,40 @@ int Interp::convert_arc_comp1(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
 
     side = settings->cutter_comp_side;
     tool_radius = settings->cutter_comp_radius;   /* always is positive */
-
     double spiral_abs_tolerance = (settings->length_units == CANON_UNITS_INCHES) ?
         settings->spiral_tolerance_inch : settings->spiral_tolerance_mm;
     double radius_tolerance = (settings->length_units == CANON_UNITS_INCHES) ?
         RADIUS_TOLERANCE_INCH : RADIUS_TOLERANCE_MM;
-
+	sprintf(msgBuf, "plane: %d,cutter_comp_side: %d, cutter_comp_side: %lf ,spiral_abs_tolerance: %lf,radius_tolerance: %lf \n",
+		settings->plane, settings->cutter_comp_side, settings->cutter_comp_radius, spiral_abs_tolerance, radius_tolerance);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     comp_get_current(settings, &cx, &cy, &cz);
-
+	sprintf(msgBuf, "Results of comp_get_current():(%lf,%lf, %lf)\n",
+		cx, cy, cz);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     CHKS((rtapi_hypot((end_x - cx), (end_y - cy)) <= tool_radius),
          _("Radius of cutter compensation entry arc is not greater than the tool radius"));
 
     if (block->r_flag) {
+		fputs("Enter the arc_data_comp_r to find the center and the num of turnnings \n", writeMsg);
         CHP(arc_data_comp_r(move, plane, side, tool_radius, cx, cy, end_x, end_y, 
                             block->r_number, block->p_flag? round_to_int(block->p_number): 1,
                             &center_x, &center_y, &turn, radius_tolerance));
+		sprintf(msgBuf, "center1: %lf,center2: %lf,turn: %d \n", center_x, center_y, turn);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
     } else {
+		fputs("Enter the arc_data_comp_ijk to find the center and the num of turnnings \n", writeMsg);
         CHP(arc_data_comp_ijk(move, plane, side, tool_radius, cx, cy, end_x, end_y,
                               (settings->ijk_distance_mode == MODE_ABSOLUTE),
                               offset_x, offset_y, block->p_flag? round_to_int(block->p_number): 1,
                               &center_x, &center_y, &turn, radius_tolerance, spiral_abs_tolerance, SPIRAL_RELATIVE_TOLERANCE));
-    }
+		sprintf(msgBuf, "center1: %lf,center2: %lf,turn: %d \n", center_x, center_y, turn);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
+	}
 
     inverse_time_rate_arc(cx, cy, cz, center_x, center_y,
                           turn, end_x, end_y, end_z, block, settings);
@@ -684,7 +763,9 @@ int Interp::convert_arc_comp1(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
         // outside: away from the center
         gamma = rtapi_atan2((end_y - center_y), (end_x - center_x));
     }
-
+	sprintf(msgBuf, "direction of perpendicular to arc at end: %lf \n", gamma);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     settings->cutter_comp_firstmove = false;
 
     comp_set_programmed(settings, end_x, end_y, end_z);
@@ -712,7 +793,10 @@ int Interp::convert_arc_comp1(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
     // center of the arc is c_len from end in direction AB
     center_x = end_x + c_len * rtapi_cos(AB_ang);
     center_y = end_y + c_len * rtapi_sin(AB_ang);
-
+	sprintf(msgBuf, "Move endpoint to the compensated position to update the endpoints:( %lf, %lf ),center of the arc :(%lf, %lf)\n"
+		, end_x, end_y, center_x, center_y);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     /* center to endpoint distances matched before - they still should. */
     CHKS((rtapi_fabs(rtapi_hypot(center_x-end_x,center_y-end_y) - 
               rtapi_hypot(center_x-cx,center_y-cy)) > spiral_abs_tolerance),
@@ -720,13 +804,15 @@ int Interp::convert_arc_comp1(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
 
     // need this move for lathes to move the tool origin first.  otherwise, the arc isn't an arc.
     if (settings->cutter_comp_orientation != 0 && settings->cutter_comp_orientation != 9) {
+		fputs("move the tool origin first \n", writeMsg);
         enqueue_STRAIGHT_FEED(settings, block->line_number, 
                               0, 0, 0,
                               cx, cy, cz,
                               AA_end, BB_end, CC_end, u_end, v_end, w_end);
         set_endpoint(cx, cy);
     }
-    
+	fputs("enqueue the arc_feed command to the qc(), argv:", writeMsg);
+	
     enqueue_ARC_FEED(settings, block->line_number, 
                      find_turn(cx, cy, center_x, center_y, turn, end_x, end_y),
                      end_x, end_y, center_x, center_y, turn, end_z,
@@ -739,7 +825,7 @@ int Interp::convert_arc_comp1(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
     settings->u_current = u_end;
     settings->v_current = v_end;
     settings->w_current = w_end;
-
+	fclose(writeMsg);
     return INTERP_OK;
 }
 
@@ -792,6 +878,10 @@ int Interp::convert_arc_comp2(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
                               double CC_end,     //!< c-value at end of arc
                               double u, double v, double w) //!< uvw at end of arc
 {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("***********Enter func convert_arc_comp2()...*********\n", writeMsg);
+	fflush(writeMsg);
     double alpha;                 /* direction of tangent to start of arc */
     double arc_radius;
     double beta;                  /* angle between two tangents above */
@@ -814,22 +904,34 @@ int Interp::convert_arc_comp2(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
     double radius_tolerance = (settings->length_units == CANON_UNITS_INCHES) ? RADIUS_TOLERANCE_INCH : RADIUS_TOLERANCE_MM;
 
     /* find basic arc data: center_x, center_y, and turn */
-
     comp_get_programmed(settings, &opx, &opy, &opz);
+	sprintf(msgBuf, "the program  coordinates: %lf, %lf, %lf \n", opx, opy, opz);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     comp_get_current(settings, &cx, &cy, &cz);
-
+	sprintf(msgBuf, "the current coordinates: %lf, %lf, %lf \n", cx, cy, cz);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
 
     if (block->r_flag) {
+		fputs("Enter the arc_data_comp_r to find the center and the num of turnnings \n", writeMsg);		
         CHP(arc_data_r(move, plane, opx, opy, end_x, end_y,
                        block->r_number, block->p_flag? round_to_int(block->p_number): 1,
                        &centerx, &centery, &turn, radius_tolerance));
+		sprintf(msgBuf, "center1: %lf,center2: %lf,turn: %d \n", centerx, centery, turn);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
     } else {
+		fputs("Enter the arc_data_comp_ijk to find the center and the num of turnnings \n", writeMsg);		
         CHP(arc_data_ijk(move, plane,
                          opx, opy, end_x, end_y,
                          (settings->ijk_distance_mode == MODE_ABSOLUTE),
                          offset_x, offset_y, block->p_flag? round_to_int(block->p_number): 1,
                          &centerx, &centery, &turn, radius_tolerance, spiral_abs_tolerance, SPIRAL_RELATIVE_TOLERANCE));
-    }
+		sprintf(msgBuf, "center1: %lf,center2: %lf,turn: %d \n", centerx, centery, turn);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
+	}
 
     inverse_time_rate_arc(opx, opy, opz, centerx, centery,
                           turn, end_x, end_y, end_z, block, settings);
@@ -845,7 +947,7 @@ int Interp::convert_arc_comp2(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
 
     // normalize beta -90 to +270?
     beta = (beta > (1.5 * M_PIl)) ? (beta - (2 * M_PIl)) : (beta < -M_PI_2l) ? (beta + (2 * M_PIl)) : beta;
-
+	
     if (((side == LEFT) && (move == G_3)) || ((side == RIGHT) && (move == G_2))) {
         // we are cutting inside the arc
         gamma = rtapi_atan2((centery - end_y), (centerx - end_x));
@@ -856,16 +958,24 @@ int Interp::convert_arc_comp2(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
         delta = (delta + M_PIl);
     }
 
+	sprintf(msgBuf, "the cutting argv: side: %d, tool_radius: %lf, arc_radius: %lf, theta: %lf, delta: %lf, alpha: %lf, beta: %lf, gamma: %lf \n",
+		side, tool_radius, arc_radius, theta, delta, alpha, beta, gamma);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     // move arc endpoint to the compensated position
     new_end_x = end_x + tool_radius * rtapi_cos(gamma);
     new_end_y = end_y + tool_radius * rtapi_sin(gamma);
-
+	sprintf(msgBuf, "Move endpoint to the compensated position ( %lf, %lf ) to update the endpoints:center of the arc :(%lf, %lf)\n"
+		, end_x, end_y, new_end_x, new_end_y);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     if (beta < -small || 
         beta > M_PIl + small ||
         // special detection for convex corner on tangent arc->arc (like atop the middle of "m" shape)
         // or tangent line->arc (atop "h" shape)
         (rtapi_fabs(beta - M_PIl) < small && !TOOL_INSIDE_ARC(side, turn))
         ) {
+		fputs("special detection for convex corner on tangent arc->arc (like atop the middle of m shape or tangent line->arc (atop h shape) \n", writeMsg);
         // concave
         if (qc().front().type != QARC_FEED) {
             // line->arc
@@ -899,7 +1009,9 @@ int Interp::convert_arc_comp2(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
           
             midx = centerx + dist_from_center * rtapi_cos(angle_from_center);
             midy = centery + dist_from_center * rtapi_sin(angle_from_center);
-
+			sprintf(msgBuf, "the  parameter (midx, midy): (%lf, %lf) \n", midx, midy);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
             CHP(move_endpoint_and_flush(settings, midx, midy));
         } else {
             // arc->arc
@@ -937,7 +1049,9 @@ int Interp::convert_arc_comp2(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
           
             midx = prev.center1 + oldrad * rtapi_cos(dir);
             midy = prev.center2 + oldrad * rtapi_sin(dir);
-          
+			sprintf(msgBuf, "the  parameter (midx, midy): (%lf, %lf)", midx, midy);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
             CHP(move_endpoint_and_flush(settings, midx, midy));
         }
         enqueue_ARC_FEED(settings, block->line_number, 
@@ -956,7 +1070,7 @@ int Interp::convert_arc_comp2(int move,  //!< either G_2 (cw arc) or G_3 (ccw ar
         dequeue_canons(settings);
         set_endpoint(midx, midy);
         enqueue_ARC_FEED(settings, block->line_number, 
-                         find_turn(opx, opy, centerx, centery, turn, end_x, end_y),
+                         find_turn(opx, opy, centerx, centery, turn, end_x, end_y),/* angle in radians between two radii of a circle*/
                          new_end_x, new_end_y, centerx, centery, turn, end_z,
                          AA_end, BB_end, CC_end, u, v, w);
     } else {                      /* convex, one arc needed */

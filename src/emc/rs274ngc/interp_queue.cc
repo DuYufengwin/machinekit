@@ -418,6 +418,10 @@ void enqueue_ARC_FEED(setup_pointer settings, int l,
                       double end3,
                       double a, double b, double c,
                       double u, double v, double w) {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("Enter the ******enqueue_ARC_FEED()**********...\n", writeMsg);
+	fflush(writeMsg);
     queued_canon q;
 
     q.type = QARC_FEED;
@@ -435,7 +439,9 @@ void enqueue_ARC_FEED(setup_pointer settings, int l,
     q.data.arc_feed.u = u;
     q.data.arc_feed.v = v;
     q.data.arc_feed.w = w;
-
+	sprintf(msgBuf, "enqueue arc lineno %d to %f %f center %f %f turn %d sweeping %f\n", 
+		    l, end1, end2, center1, center2, turn, original_turns);
+	fclose(writeMsg);
     if(debug_qc) printf("enqueue arc lineno %d to %f %f center %f %f turn %d sweeping %f\n", l, end1, end2, center1, center2, turn, original_turns);
     qc().push_back(q);
 }
@@ -515,17 +521,29 @@ void qc_scale(double scale) {
 
 void dequeue_canons(setup_pointer settings) {
 
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("*********Enter the dequeue_canons()********...\n", writeMsg);
+	fflush(writeMsg);
     if(debug_qc) printf("dequeueing: endpoint is now invalid\n");
     endpoint_valid = 0;
 
     if(qc().empty()) return;
-
+	sprintf(msgBuf, "length of the qc() :%d \n", qc().size());
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     for(unsigned int i = 0; i<qc().size(); i++) {
         queued_canon &q = qc()[i];
 
         switch(q.type) {
+			sprintf(msgBuf, "Type of the msg: %d \n", q.type);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
         case QARC_FEED:
             if(debug_qc) printf("issuing arc feed lineno %d\n", q.data.arc_feed.line_number);
+			sprintf(msgBuf, "issuing arc feed lineno %d\n", q.data.arc_feed.line_number);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
             ARC_FEED(q.data.arc_feed.line_number, 
                      latheorigin_z(settings, q.data.arc_feed.end1), 
                      latheorigin_x(settings, q.data.arc_feed.end2), 
@@ -538,6 +556,9 @@ void dequeue_canons(setup_pointer settings) {
             break;
         case QSTRAIGHT_FEED:
             if(debug_qc) printf("issuing straight feed lineno %d\n", q.data.straight_feed.line_number);
+			sprintf(msgBuf, "issuing straight feed lineno %d\n", q.data.straight_feed.line_number);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
             STRAIGHT_FEED(q.data.straight_feed.line_number, 
                           latheorigin_x(settings, q.data.straight_feed.x), 
                           q.data.straight_feed.y, 
@@ -547,6 +568,9 @@ void dequeue_canons(setup_pointer settings) {
             break;
         case QSTRAIGHT_TRAVERSE:
             if(debug_qc) printf("issuing straight traverse lineno %d\n", q.data.straight_traverse.line_number);
+			sprintf(msgBuf, "issuing straight traverse lineno %d\n", q.data.straight_traverse.line_number);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
             STRAIGHT_TRAVERSE(q.data.straight_traverse.line_number, 
                               latheorigin_x(settings, q.data.straight_traverse.x),
                               q.data.straight_traverse.y,
@@ -654,6 +678,8 @@ void dequeue_canons(setup_pointer settings) {
             break;
         }
     }
+	fputs("Clear the qc() queue so that we can add new command into the queue \n", writeMsg);
+	fclose(writeMsg);
     qc().clear();
 }
 
@@ -665,7 +691,13 @@ int Interp::move_endpoint_and_flush(setup_pointer settings, double x, double y) 
     double dot;
 
     if(qc().empty()) return 0;
-    
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("*********Enter the move_endpoint_and_flush()********...\n", writeMsg);
+	fflush(writeMsg);
+	sprintf(msgBuf, "size of the qc: %d \n", qc().size());
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     for(unsigned int i = 0; i<qc().size(); i++) {
         // there may be several moves in the queue, and we need to
         // change all of them.  consider moving into a concave corner,
@@ -673,7 +705,9 @@ int Interp::move_endpoint_and_flush(setup_pointer settings, double x, double y) 
         // three moves to change.
 
         queued_canon &q = qc()[i];
-
+		sprintf(msgBuf, "motion type: %d \n", q.type);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
         switch(q.type) {
         case QARC_FEED:
             double r1, r2, l1, l2;
@@ -697,7 +731,10 @@ int Interp::move_endpoint_and_flush(setup_pointer settings, double x, double y) 
             }
             q.data.arc_feed.end1 = x;
             q.data.arc_feed.end2 = y;
-            break;
+			sprintf(msgBuf, "QARC_FEED:update the endpoint to the (%lf, %lf) \n", x, y);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
+			break;
         case QSTRAIGHT_TRAVERSE:
             switch(settings->plane) {
             case CANON_PLANE_XY:
@@ -738,6 +775,10 @@ int Interp::move_endpoint_and_flush(setup_pointer settings, double x, double y) 
                 q.data.straight_traverse.x = y;
                 break;
             }
+			sprintf(msgBuf, "QSTRAIGHT_TRAVERSE:update the endpoint to the (%lf, %lf) \n", 
+				q.data.straight_traverse.x, q.data.straight_traverse.y);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
             break;
         case QSTRAIGHT_FEED: 
             switch(settings->plane) {
@@ -780,12 +821,18 @@ int Interp::move_endpoint_and_flush(setup_pointer settings, double x, double y) 
                 q.data.straight_feed.x = y;
                 break;
             }
+			sprintf(msgBuf, "QSTRAIGHT_FEED:update the endpoint to the (%lf, %lf) \n", 
+				q.data.straight_feed.x, q.data.straight_feed.y);
+			fputs(msgBuf, writeMsg);
+			fflush(writeMsg);
             break;
         default:
             // other things are not moves - we don't have to mess with them.
             ;
         }
     }
+	fputs("Dequeue the canon msg to the interp_list and update the endpoint:\n", writeMsg);
+	fclose(writeMsg);
     dequeue_canons(settings);
     set_endpoint(x, y);
     return 0;

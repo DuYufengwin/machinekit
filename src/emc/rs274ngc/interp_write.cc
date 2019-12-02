@@ -208,8 +208,16 @@ int Interp::write_state_tag(block_pointer block,
         setup_pointer settings,
         StateTag &state)
 {
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("*********Enter the write_state_tag()**********\n", writeMsg);
+	fflush(writeMsg);
+	
 
     state.fields[GM_FIELD_LINE_NUMBER] = settings->sequence_number;
+	sprintf(msgBuf, "lineNum: %d /n", state.fields[GM_FIELD_LINE_NUMBER]);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     //FIXME refactor these into setup methods, and maybe put this whole method in setup struct
     bool in_remap = (settings->remap_level > 0);
     bool in_sub = (settings->call_level > 0 && settings->remap_level == 0);
@@ -218,6 +226,9 @@ int Interp::write_state_tag(block_pointer block,
     state.flags[GM_FLAG_IN_SUB] = in_sub;
     state.flags[GM_FLAG_RESTORABLE] = !in_remap && !in_sub;
     state.fields[GM_FIELD_G_MODE_0] = ((block == NULL) ? -1 : block->g_modes[0]);
+	sprintf(msgBuf, "G_0: %d \n", state.fields[GM_FIELD_G_MODE_0]);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
     state.fields[GM_FIELD_MOTION_MODE] = settings->motion_mode;
     switch(settings->plane) {
         case CANON_PLANE_XY:
@@ -239,7 +250,9 @@ int Interp::write_state_tag(block_pointer block,
             state.fields[GM_FIELD_PLANE] = G_19_1;
             break;
     }
-
+	sprintf(msgBuf, "CANON PLANE: %d \n", state.fields[GM_FIELD_PLANE]);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
   state.fields[GM_FIELD_CUTTER_COMP] =
     (settings->cutter_comp_side == RIGHT) ? G_42 :
     (settings->cutter_comp_side == LEFT) ? G_41 : G_40;
@@ -287,7 +300,10 @@ int Interp::write_state_tag(block_pointer block,
 
     state.feed = settings->feed_rate;        /* 1 feed rate       */
     state.speed = settings->speed;    /* 2 spindle speed   */
-
+    sprintf(msgBuf, "feed_rate: %lf  spindle_speed: %lf\n", state.feed,state.speed);
+	fputs(msgBuf, writeMsg);
+	fflush(writeMsg);
+	fclose(writeMsg);
     return 0;
 }
 /****************************************************************************/

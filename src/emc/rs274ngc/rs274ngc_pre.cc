@@ -281,6 +281,19 @@ int Interp::_execute(const char *command)
 	return status;
     }
   }
+  FILE *writExecute = fopen("printMsg.txt", "a+");
+  char msg[200];
+  sprintf(msg, "execute:%s %s='%s' mdi_int=%d o_type=%s o_name=%s cl=%d rl=%d type=%s state=%s ",
+	  MDImode ? "MDI" : "auto",
+	  command ? "command" : "line",
+	  command ? command : _setup.linetext,
+	  _setup.mdi_interrupt, o_ops[eblock->o_type], eblock->o_name,
+	  _setup.call_level, _setup.remap_level,
+	  eblock->call_type < 0 ? "*unset*" : call_typenames[eblock->call_type],
+	  call_statenames[_setup.call_state]);
+  fputs(msg, writExecute);
+  fflush(writExecute);
+  fclose(writExecute);
   logDebug("execute:%s %s='%s' mdi_int=%d o_type=%s o_name=%s cl=%d rl=%d type=%s state=%s",
 	   MDImode ? "MDI" : "auto",
 	   command ? "command" : "line",
@@ -505,6 +518,8 @@ int Interp::_execute(const char *command)
 
 int Interp::execute(const char *command)
 {
+	fputs("enter the excute() \n", stdout);
+	fflush(stdout);
     int status;
     if ((status = _execute(command)) > INTERP_MIN_ERROR) {
         unwind_call(status, __FILE__,__LINE__,__FUNCTION__);
@@ -540,6 +555,8 @@ int Interp::execute(const char *command, int line_number)
 // calls back in here to continue block execution
 int Interp::remap_finished(int phase)
 {
+	fputs("remap_finished enter \n", stdout);
+	fflush(stdout);
     int next_remap,status;
     block_pointer cblock = &CONTROLLING_BLOCK(_setup);
 
@@ -1346,6 +1363,8 @@ file.
 
 int Interp::open(const char *filename) //!< string: the name of the input NC-program file
 {
+	fputs("enter open() to open the  NGCFile\n", stdout);
+	fflush(stdout);
   char *line;
   int index;
   int length;
@@ -1774,6 +1793,8 @@ has its value set to zero.
 */
 int Interp::restore_parameters(const char *filename)   //!< name of parameter file to read  
 {
+	fputs("enter the restore_parameters() \n", stdout);
+	fflush(stdout);
   FILE *infile;
   char line[256];
   int variable;
@@ -1867,6 +1888,8 @@ complain, but does write it in the output file.
 int Interp::save_parameters(const char *filename,      //!< name of file to write
                              const double parameters[]) //!< parameters to save   
 {
+	fputs("enter the save_parameters()\n",stdout);
+	fflush(stdout);
   FILE *infile;
   FILE *outfile;
   char line[PATH_MAX];
@@ -2030,6 +2053,8 @@ See documentation of write_g_codes.
 
 void Interp::active_g_codes(int *codes)        //!< array of codes to copy into
 {
+	/*fputs("active G codes \n", stdout);
+	fflush(stdout);*/
   int n;
 
   for (n = 0; n < ACTIVE_G_CODES; n++) {
@@ -2053,6 +2078,8 @@ See documentation of write_m_codes.
 
 void Interp::active_m_codes(int *codes)        //!< array of codes to copy into
 {
+	/*fputs("active M codes \n", stdout);
+	fflush(stdout);*/
   int n;
 
   for (n = 0; n < ACTIVE_M_CODES; n++) {
@@ -2076,6 +2103,8 @@ See documentation of write_settings.
 
 void Interp::active_settings(double *settings) //!< array of settings to copy into
 {
+	//fputs("active settings \n", stdout);
+	fflush(stdout);
   int n;
 
   for (n = 0; n < ACTIVE_SETTINGS; n++) {
@@ -2238,6 +2267,10 @@ max_size, in which case a null string is put in the file_name array.
 char *Interp::file_name(char *file_name,        //!< string: to copy file name into
                         size_t max_size)   //!< maximum number of characters to copy
 {
+	/*char msg[128];
+	sprintf(msg, "the NGC file name is : %s \n",file_name);
+	fputs(msg, stdout);
+	fflush(stdout);*/
   if (strlen(_setup.filename) < ((size_t) max_size))
     strcpy(file_name, _setup.filename);
   else

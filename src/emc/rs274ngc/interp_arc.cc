@@ -333,7 +333,13 @@ they are used here as suffixes of variable names.
 If the value of the radius argument is negative, that means [NCMS,
 page 21] that an arc larger than a semicircle is to be made.
 Otherwise, an arc of a semicircle or less is made.
-
+这将查找r格式的螺旋或圆弧的中心坐标和全部或部分逆时针旋转的圈数。
+这个函数被convert_arc2用于所有三个平面，因此“x”和“y”实际上是
+指“第一个_坐标”和“第二个_坐标”，无论它们在这里用作变量名的后缀。
+如果radius参数的值为负，则意味着[NCMS，第21页]将生成一个大于半圆的圆弧。
+否则，将生成一个半圆或更小的圆弧。
+这里使用的算法是基于在当前点和圆弧终点之间找到直线L的中点M。
+弧的中心位于一条穿过M的直线上，这条直线垂直于L。
 The algorithm used here is based on finding the midpoint M of the line
 L between the current point and the end point of the arc. The center
 of the arc lies on a line through M perpendicular to L.

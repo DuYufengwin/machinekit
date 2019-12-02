@@ -1505,6 +1505,7 @@ void ARC_FEED(int line_number,
               double u, double v, double w)
 {
 
+
     EMC_TRAJ_CIRCULAR_MOVE circularMoveMsg;
     EMC_TRAJ_LINEAR_MOVE linearMoveMsg;
 
@@ -1798,28 +1799,49 @@ void ARC_FEED(int line_number,
     canon_debug("a_max = %f\n",a_max);
 
     cartesian_move = 1;
-
+	FILE *writeMsg = fopen("convert_arcMsg.txt", "a+");
+	char msgBuf[200];
+	fputs("Enter the function ARC_FEED \n",writeMsg);
+	
     if (rotation == 0) {
         // linear move
         // FIXME (Rob) Am I missing something? the P word should never be zero,
         // or we wouldn't be calling ARC_FEED
+		fputs("As rotation == 0, so we send the linearMoveMsg to the interp_list \n", writeMsg);
         linearMoveMsg.end = to_ext_pose(endpt);
         linearMoveMsg.type = EMC_MOTION_TYPE_ARC;
         linearMoveMsg.vel = toExtVel(vel);
         linearMoveMsg.ini_maxvel = toExtVel(v_max);
         linearMoveMsg.acc = toExtAcc(a_max);
         linearMoveMsg.indexrotary = -1;
-        if(vel && a_max){
+		fputs("linearMoveMsg's MSG:\n",writeMsg);
+		fflush(writeMsg);
+		sprintf(msgBuf,"end.tran.x: %lf,end.tran.y: %lf,end.tran.z: %lf \n", linearMoveMsg.end.tran.x,linearMoveMsg.end.tran.y,linearMoveMsg.end.tran.z);
+		fputs(msgBuf, writeMsg);
+		fputs("EMC_NOTION_ARC\n", writeMsg);
+		sprintf(msgBuf, "the vel:%lf, v_max:%lf, acc:%lf line_number:%d\n", linearMoveMsg.vel, linearMoveMsg.ini_maxvel, linearMoveMsg.acc,line_number);
+		fputs(msgBuf, writeMsg);
+		if(vel && a_max){
             interp_list.set_line_number(line_number);
             tag_and_send(linearMoveMsg, _tag);
         }
-    } else {
-        circularMoveMsg.end = to_ext_pose(endpt);
 
+    } else {
+		fputs("As the rotation != 0 ,so we send the circularMoveMsg to the interp_list\n", writeMsg);
+		fputs("CircularMoveMsg msg:\n", writeMsg);
+        circularMoveMsg.end = to_ext_pose(endpt);
+		sprintf(msgBuf, "end.tran.x: %lf,end.tran.y: %lf,end.tran.z: %lf \n", circularMoveMsg.end.tran.x, circularMoveMsg.end.tran.y, circularMoveMsg.end.tran.z);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
         // Convert internal center and normal to external units
         circularMoveMsg.center = to_ext_len(center_cart);
+		sprintf(msgBuf, "center.x: %lf, center.y: %lf, center.z: %lf \n", circularMoveMsg.center.x, circularMoveMsg.center.y, circularMoveMsg.center.z);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
         circularMoveMsg.normal = to_ext_len(normal_cart);
-
+		sprintf(msgBuf, "normal.x: %lf, normal.y: %lf, normal.z: %lf \n", circularMoveMsg.normal.x, circularMoveMsg.normal.y, circularMoveMsg.normal.z);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
         if (rotation > 0)
             circularMoveMsg.turn = rotation - 1;
         else
@@ -1827,11 +1849,13 @@ void ARC_FEED(int line_number,
             circularMoveMsg.turn = rotation;
 
         circularMoveMsg.type = EMC_MOTION_TYPE_ARC;
-
+		fputs("type:EMC_MOTION_TYPE_ARC\n", writeMsg);
         circularMoveMsg.vel = toExtVel(vel);
         circularMoveMsg.ini_maxvel = toExtVel(v_max);
         circularMoveMsg.acc = toExtAcc(a_max);
-
+		sprintf(msgBuf, "the vel:%lf, v_max:%lf, acc:%lf line_number:%d\n", circularMoveMsg.vel, circularMoveMsg.ini_maxvel, circularMoveMsg.acc, line_number);
+		fputs(msgBuf, writeMsg);
+		fflush(writeMsg);
         //FIXME what happens if accel or vel is zero?
         // The end point is still updated, but nothing is added to the interp list
         // seems to be a crude way to indicate a zero length segment?
@@ -1841,6 +1865,7 @@ void ARC_FEED(int line_number,
         }
     }
     // update the end point
+	fclose(writeMsg);
     canonUpdateEndPoint(endpt);
 }
 
